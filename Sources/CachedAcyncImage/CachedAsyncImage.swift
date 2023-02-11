@@ -29,6 +29,6 @@ public struct CachedAsyncImage<Content: View, Placeholder: View>: View {
             }
         }
         .animation(.easeInOut, value: loader.isLoading)
-        .onAppear(perform: loader.load)
+        .task { await loader.load() }
     }
 }

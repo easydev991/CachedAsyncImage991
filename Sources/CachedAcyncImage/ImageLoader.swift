@@ -1,4 +1,4 @@
-import Combine
+import Foundation
 import UIKit.UIImage
 
 final class ImageLoader: ObservableObject {
@@ -6,41 +6,25 @@ final class ImageLoader: ObservableObject {
     @Published private(set) var isLoading = false
     private var url: URL?
     private var cache: ImageCache?
-    private var cancellable: AnyCancellable?
-    private let imageProcessingQueue = DispatchQueue(label: "image-processing")
 
     init(url: URL?, cache: ImageCache? = nil) {
         self.url = url
         self.cache = cache
     }
 
-    deinit { cancellable?.cancel() }
-
-    func load() {
+    @MainActor
+    func load() async {
         guard let url = url, !isLoading else { return }
         if let image = cache?[url] {
             self.image = image
             return
         }
-        cancellable = URLSession.shared.dataTaskPublisher(for: url)
-            .map(\.data)
-            .map(UIImage.init)
-            .replaceError(with: nil)
-            .subscribe(on: imageProcessingQueue)
-            .receive(on: DispatchQueue.main)
-            .handleEvents(
-                receiveSubscription: { [weak self] _ in self?.isLoading = true },
-                receiveOutput: { [weak self] loadedImage in
-                    guard let self else { return }
-                    loadedImage.map { self.cache?[url] = $0 }
-                },
-                receiveCompletion: { [weak self] _ in self?.onFinish() },
-                receiveCancel: { [weak self] in self?.onFinish() }
-            )
-            .sink { [weak self] in self?.image = $0 }
+        isLoading = true
+        if let (data, _) = try? await URLSession.shared.data(from: url),
+           let loadedImage = UIImage(data: data) {
+            cache?[url] = loadedImage
+            self.image = loadedImage
+        }
+        isLoading = false
     }
-}
-
-private extension ImageLoader {
-    func onFinish() { isLoading = false }
 }
