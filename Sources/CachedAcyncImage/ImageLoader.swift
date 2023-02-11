@@ -3,7 +3,7 @@ import UIKit.UIImage
 
 final class ImageLoader: ObservableObject {
     @Published var image: UIImage?
-    private(set) var isLoading = false
+    @Published private(set) var isLoading = false
     private var url: URL?
     private var cache: ImageCache?
     private var cancellable: AnyCancellable?
@@ -14,39 +14,33 @@ final class ImageLoader: ObservableObject {
         self.cache = cache
     }
 
-    deinit { cancel() }
+    deinit { cancellable?.cancel() }
 
     func load() {
         guard let url = url, !isLoading else { return }
-
         if let image = cache?[url] {
             self.image = image
             return
         }
-
         cancellable = URLSession.shared.dataTaskPublisher(for: url)
-            .map { UIImage(data: $0.data) }
+            .map(\.data)
+            .map(UIImage.init)
             .replaceError(with: nil)
+            .subscribe(on: imageProcessingQueue)
+            .receive(on: DispatchQueue.main)
             .handleEvents(
-                receiveSubscription: { [weak self] _ in self?.onStart() },
-                receiveOutput: { [weak self] in self?.cache($0) },
+                receiveSubscription: { [weak self] _ in self?.isLoading = true },
+                receiveOutput: { [weak self] loadedImage in
+                    guard let self else { return }
+                    loadedImage.map { self.cache?[url] = $0 }
+                },
                 receiveCompletion: { [weak self] _ in self?.onFinish() },
                 receiveCancel: { [weak self] in self?.onFinish() }
             )
-            .subscribe(on: imageProcessingQueue)
-            .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.image = $0 }
     }
 }
 
 private extension ImageLoader {
-    func cancel() { cancellable?.cancel() }
-
-    func onStart() { isLoading = true }
-
     func onFinish() { isLoading = false }
-
-    func cache(_ image: UIImage?) {
-        image.map { cache?[url!] = $0 }
-    }
 }
