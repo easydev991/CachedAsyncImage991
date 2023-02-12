@@ -16,7 +16,7 @@ public struct CachedAsyncImage<Content: View, Placeholder: View>: View {
         self.transition = transition
         self.content = content
         self.placeholder = placeholder
-        _loader = StateObject(wrappedValue: .init(url: url, cache: Environment(\.imageCache).wrappedValue))
+        _loader = StateObject(wrappedValue: .init(url: url))
     }
 
     public var body: some View {

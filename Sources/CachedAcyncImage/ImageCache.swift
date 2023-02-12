@@ -5,13 +5,17 @@ protocol ImageCache {
     subscript(_ url: URL) -> UIImage? { get set }
 }
 
-struct TemporaryImageCache: ImageCache {
+final class ImageCacheService: ImageCache {
+    private init() {}
+    
     private let cache: NSCache<NSURL, UIImage> = {
         let cache = NSCache<NSURL, UIImage>()
         cache.countLimit = 100 // 100 items
         cache.totalCostLimit = 1024 * 1024 * 100 // 100 MB
         return cache
     }()
+
+    static let shared = ImageCacheService()
 
     subscript(_ key: URL) -> UIImage? {
         get { cache.object(forKey: key as NSURL) }
