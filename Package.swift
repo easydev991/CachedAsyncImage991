@@ -4,13 +4,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "CachedAcyncImage",
+    name: "CachedAsyncImage991",
     platforms: [.iOS(.v15)],
     products: [
-        .library(name: "CachedAcyncImage", targets: ["CachedAcyncImage"]),
+        .library(name: "CachedAsyncImage991", targets: ["CachedAsyncImage991"]),
     ],
     dependencies: [],
     targets: [
-        .target(name: "CachedAcyncImage", dependencies: [])
+        .target(name: "CachedAsyncImage991", dependencies: [])
     ]
 )

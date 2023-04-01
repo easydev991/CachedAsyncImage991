@@ -1,5 +1,5 @@
 import SwiftUI
-import CachedAcyncImage
+import CachedAsyncImage991
 
 struct ContentView: View {
     @StateObject private var viewModel = ContentViewModel()
@@ -8,7 +8,7 @@ struct ContentView: View {
         List {
             ForEach(viewModel.images) { model in
                 HStack(spacing: 16) {
-                    CachedAsyncImage(url: model.url) { image in
+                    CachedAsyncImage991(url: model.url) { image in
                         Image(uiImage: image)
                             .resizable()
                             .clipShape(Circle())

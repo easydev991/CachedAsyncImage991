@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Картинка с возможностью кэширования
-public struct CachedAsyncImage<Content: View, Placeholder: View>: View {
+public struct CachedAsyncImage991<Content: View, Placeholder: View>: View {
     @StateObject private var loader: ImageLoader
     private let transition: AnyTransition
     private let placeholder: () -> Placeholder
