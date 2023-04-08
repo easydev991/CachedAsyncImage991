@@ -2,7 +2,7 @@ import Foundation
 import UIKit.UIImage
 
 final class ImageLoader: ObservableObject {
-    @Published var image: UIImage?
+    @Published private(set) var image: UIImage?
     @Published private(set) var isLoading = false
     private let url: URL?
     private let cache = ImageCacheService.shared
