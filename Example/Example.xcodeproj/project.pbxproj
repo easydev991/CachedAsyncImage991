@@ -12,7 +12,7 @@
 		672F486529994FA600668E82 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 672F486429994FA600668E82 /* Preview Assets.xcassets */; };
 		672F486C29994FBE00668E82 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 672F486B29994FBE00668E82 /* ContentView.swift */; };
 		672F486E29994FCB00668E82 /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 672F486D29994FCB00668E82 /* ContentViewModel.swift */; };
-		672F48742999502E00668E82 /* CachedAcyncImage in Frameworks */ = {isa = PBXBuildFile; productRef = 672F48732999502E00668E82 /* CachedAcyncImage */; };
+		67A6FEFD29E1F9DC002DCBA1 /* CachedAsyncImage991 in Frameworks */ = {isa = PBXBuildFile; productRef = 67A6FEFC29E1F9DC002DCBA1 /* CachedAsyncImage991 */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,7 +31,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				672F48742999502E00668E82 /* CachedAcyncImage in Frameworks */,
+				67A6FEFD29E1F9DC002DCBA1 /* CachedAsyncImage991 in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -109,7 +109,7 @@
 			);
 			name = Example;
 			packageProductDependencies = (
-				672F48732999502E00668E82 /* CachedAcyncImage */,
+				67A6FEFC29E1F9DC002DCBA1 /* CachedAsyncImage991 */,
 			);
 			productName = Example;
 			productReference = 672F485A29994FA400668E82 /* Example.app */;
@@ -139,6 +139,8 @@
 				Base,
 			);
 			mainGroup = 672F485129994FA400668E82;
+			packageReferences = (
+			);
 			productRefGroup = 672F485B29994FA400668E82 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -378,9 +380,9 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		672F48732999502E00668E82 /* CachedAcyncImage */ = {
+		67A6FEFC29E1F9DC002DCBA1 /* CachedAsyncImage991 */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = CachedAcyncImage;
+			productName = CachedAsyncImage991;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

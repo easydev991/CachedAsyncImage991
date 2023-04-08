@@ -11,7 +11,7 @@ final class ImageLoader: ObservableObject {
 
     @MainActor
     func load() async {
-        guard let url = url, !isLoading else { return }
+        guard let url, !isLoading else { return }
         if let image = cache[url], self.image != image {
             self.image = image
             return
