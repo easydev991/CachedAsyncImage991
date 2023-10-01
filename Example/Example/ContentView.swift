@@ -1,31 +1,41 @@
 import SwiftUI
 import CachedAsyncImage991
 
+struct Model: Identifiable, Codable {
+    let id: Int
+    let url: String
+    var finalURL: URL? { .init(string: url) }
+}
+
 struct ContentView: View {
-    @StateObject private var viewModel = ContentViewModel()
+    @State private var images = [Model]()
 
     var body: some View {
-        List {
-            ForEach(viewModel.images) { model in
-                HStack(spacing: 16) {
-                    CachedAsyncImage991(url: model.url) { image in
+        ScrollView {
+            LazyVStack {
+                ForEach(images) { model in
+                    CachedAsyncImage991(url: model.finalURL) { image in
                         Image(uiImage: image)
                             .resizable()
+                            .scaledToFit()
                             .clipShape(Circle())
                     } placeholder: {
                         ProgressView()
                     }
-                    .frame(width: 100, height: 100)
-                    Text(model.title)
                 }
+                .frame(height: 150)
             }
         }
-        .task { await viewModel.getImages() }
+        .task { await getImages() }
+    }
+
+    private func getImages() async {
+        guard let url = URL(string: "https://jsonplaceholder.typicode.com/photos"),
+              let (data, _) = try? await URLSession.shared.data(for: .init(url: url)),
+              let decodedArray = try? JSONDecoder().decode([Model].self, from: data)
+        else { return }
+        images = decodedArray
     }
 }
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
-    }
-}
+#Preview { ContentView() }

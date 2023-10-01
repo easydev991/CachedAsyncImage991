@@ -21,8 +21,8 @@ public struct CachedAsyncImage991<Content: View, Placeholder: View>: View {
 
     public var body: some View {
         ZStack {
-            if let result = loader.image {
-                content(result)
+            if let image = loader.image {
+                content(image)
                     .transition(transition)
             } else {
                 placeholder()
