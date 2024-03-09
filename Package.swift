@@ -11,6 +11,7 @@ let package = Package(
     ],
     dependencies: [],
     targets: [
-        .target(name: "CachedAsyncImage991", dependencies: [])
+        .target(name: "CachedAsyncImage991", dependencies: []),
+        .testTarget(name: "CachedAsyncImage991Tests", dependencies: ["CachedAsyncImage991"])
     ]
 )

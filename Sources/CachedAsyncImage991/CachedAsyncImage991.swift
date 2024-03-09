@@ -6,7 +6,13 @@ public struct CachedAsyncImage991<Content: View, Placeholder: View>: View {
     private let transition: AnyTransition
     private let placeholder: () -> Placeholder
     private let content: (UIImage) -> Content
-
+    
+    /// Инициализатор
+    /// - Parameters:
+    ///   - url: Ссылка на картинку
+    ///   - transition: Переход из одного состояния в другое, по умолчанию `.opacity.combined(with: .scale)`
+    ///   - content: Замыкание с готовой картинкой в формате `UIImage`
+    ///   - placeholder: Замыкание для настройки вьюхи на случай отсутствия картинки (загрузка/ошибка)
     public init(
         url: URL?,
         transition: AnyTransition = .opacity.combined(with: .scale),
@@ -21,14 +27,14 @@ public struct CachedAsyncImage991<Content: View, Placeholder: View>: View {
 
     public var body: some View {
         ZStack {
-            if let image = loader.image {
-                content(image)
+            if let uiImage = loader.state?.uiImage {
+                content(uiImage)
                     .transition(transition)
             } else {
                 placeholder()
             }
         }
-        .animation(.easeInOut, value: loader.isLoading)
+        .animation(.easeInOut, value: loader.state)
         .task { await loader.load() }
     }
 }
