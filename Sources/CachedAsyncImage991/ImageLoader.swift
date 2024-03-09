@@ -3,9 +3,11 @@ import UIKit.UIImage
 import OSLog
 
 final class ImageLoader: ObservableObject {
-    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ImageLoader")
-    @Published private(set) var image: UIImage?
-    @Published private(set) var isLoading = false
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "CachedAsyncImage991",
+        category: "ImageLoader"
+    )
+    @Published private(set) var state: State?
     private let url: URL?
     private let cache = ImageCacheService.shared
 
@@ -13,34 +15,47 @@ final class ImageLoader: ObservableObject {
 
     @MainActor
     func load() async {
-        guard let url, !isLoading else {
-            logger.debug("Skipping this call to `load()` method")
+        guard let url, state?.uiImage == nil else {
+            logger.debug("Пропускаем загрузку картинки")
             return
         }
-        if let image = cache[url], self.image != image {
-            logger.debug("Using a cached image for url: \(url, privacy: .public)")
-            self.image = image
+        if let image = cache[url], state?.uiImage != image {
+            logger.debug("Используем картинку из кэша по URL: \(url, privacy: .public)")
+            state = .ready(image)
             return
         }
-        isLoading = true
-        logger.debug("Loading an image from url: \(url, privacy: .public)")
+        state = .loading
+        logger.debug("Загружаем картинку по URL: \(url, privacy: .public)")
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
             if let loadedImage = UIImage(data: data) {
                 cache[url] = loadedImage
-                self.image = loadedImage
-                logger.debug("Successfully got an image from url: \(url, privacy: .public)")
+                state = .ready(loadedImage)
+                logger.debug("Успешно загрузили картинку по URL: \(url, privacy: .public)")
             } else {
-                logger.error("Failed to create a UIImage with data")
+                logger.error("Не удалось создать картинку из Data")
+                state = .error
             }
         } catch {
             logger.error(
                 """
-                Failed to load image from URL: \(url, privacy: .public)
-                Error: \(error.localizedDescription, privacy: .public)
+                Не удалось загрузить картинку по URL: \(url, privacy: .public)
+                Ошибка: \(error.localizedDescription, privacy: .public)
                 """
             )
+            state = .error
         }
-        isLoading = false
+    }
+}
+
+extension ImageLoader {
+    enum State: Equatable {
+        case loading
+        case ready(UIImage)
+        case error
+        var isLoading: Bool { self == .loading }
+        var uiImage: UIImage? {
+            if case let .ready(uiImage) = self { uiImage } else { nil }
+        }
     }
 }

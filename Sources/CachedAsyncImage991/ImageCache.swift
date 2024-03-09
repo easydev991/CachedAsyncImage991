@@ -1,11 +1,7 @@
 import Foundation
 import UIKit.UIImage
 
-protocol ImageCache {
-    subscript(_ url: URL) -> UIImage? { get set }
-}
-
-final class ImageCacheService: ImageCache {
+final class ImageCacheService {
     private init() {}
     
     private let cache: NSCache<NSURL, UIImage> = {
