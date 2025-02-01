@@ -1,61 +1,74 @@
-import Foundation
 import UIKit.UIImage
-import OSLog
 
-final class ImageLoader: ObservableObject {
-    private let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "CachedAsyncImage991",
-        category: "ImageLoader"
-    )
-    @Published private(set) var state: State?
-    private let url: URL?
-    private let cache = ImageCacheService.shared
-
-    init(url: URL?) { self.url = url }
-
-    @MainActor
-    func load() async {
-        guard let url, state?.uiImage == nil else {
-            logger.debug("Пропускаем загрузку картинки")
-            return
-        }
-        if let image = cache[url], state?.uiImage != image {
-            logger.debug("Используем картинку из кэша по URL: \(url, privacy: .public)")
-            state = .ready(image)
-            return
-        }
-        state = .loading
-        logger.debug("Загружаем картинку по URL: \(url, privacy: .public)")
-        do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            if let loadedImage = UIImage(data: data) {
-                cache[url] = loadedImage
-                state = .ready(loadedImage)
-                logger.debug("Успешно загрузили картинку по URL: \(url, privacy: .public)")
-            } else {
-                logger.error("Не удалось создать картинку из Data")
-                state = .error
-            }
-        } catch {
-            logger.error(
-                """
-                Не удалось загрузить картинку по URL: \(url, privacy: .public)
-                Ошибка: \(error.localizedDescription, privacy: .public)
-                """
-            )
-            state = .error
+enum ImageLoadingError: Error, LocalizedError {
+    case invalidURL
+    case invalidImageData(String)
+    case cancelled(String)
+    case networkError(_ stringURL: String, _ description: String, _ code: Int)
+    
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:
+            "Попытка загрузки без URL"
+        case let .invalidImageData(stringURL):
+            "Не смогли создать картинку из данных для URL: \(stringURL)"
+        case let .cancelled(stringURL):
+            "Отменили загрузку для URL: \(stringURL)"
+        case let .networkError(stringURL, description, code):
+            """
+            Ошибка загрузки для \(stringURL)
+            Описание: \(description)
+            Код ошибки: \(code)
+            """
         }
     }
 }
 
-extension ImageLoader {
-    enum State: Equatable {
-        case loading
-        case ready(UIImage)
-        case error
-        var isLoading: Bool { self == .loading }
-        var uiImage: UIImage? {
-            if case let .ready(uiImage) = self { uiImage } else { nil }
+protocol ImageLoaderProtocol {
+    func loadImage(for url: URL?) async throws -> UIImage
+    func getCachedImage(for url: URL?) -> UIImage?
+}
+
+struct ImageLoader: ImageLoaderProtocol {
+    private let cache: ImageCacheServiceProtocol
+    private let urlSession: URLSession
+    
+    init(
+        cache: ImageCacheServiceProtocol = ImageCacheService.shared,
+        urlSession: URLSession = .shared
+    ) {
+        self.cache = cache
+        self.urlSession = urlSession
+    }
+    
+    func getCachedImage(for url: URL?) -> UIImage? {
+        guard let url else { return nil }
+        return cache[url]
+    }
+    
+    func loadImage(for url: URL?) async throws -> UIImage {
+        guard let url else {
+            throw ImageLoadingError.invalidURL
+        }
+        if let cached = cache[url] {
+            return cached
+        }
+        do {
+            let (data, _) = try await urlSession.data(from: url)
+            guard let image = UIImage(data: data) else {
+                throw ImageLoadingError.invalidImageData(url.absoluteString)
+            }
+            cache[url] = image
+            return image
+        } catch {
+            let stringURL = url.absoluteString
+            let errorCode = (error as NSError).code
+            if errorCode == -999 {
+                throw ImageLoadingError.cancelled(stringURL)
+            } else {
+                let description = error.localizedDescription
+                throw ImageLoadingError.networkError(stringURL, description, errorCode)
+            }
         }
     }
 }

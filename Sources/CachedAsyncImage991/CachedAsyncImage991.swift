@@ -5,9 +5,9 @@ import OSLog
 public struct CachedAsyncImage991<Content: View, Placeholder: View>: View {
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "CachedAsyncImage991",
-        category: "ImageLoader"
+        category: "View"
     )
-    private let cache = ImageCacheService.shared
+    private let loader: ImageLoaderProtocol = ImageLoader()
     private let transition: AnyTransition
     private let placeholder: Placeholder
     private let content: (UIImage) -> Content
@@ -52,8 +52,8 @@ public struct CachedAsyncImage991<Content: View, Placeholder: View>: View {
 
     public var body: some View {
         ZStack {
-            if let uiImage {
-                content(uiImage)
+            if let currentImage {
+                content(currentImage)
                     .transition(transition)
             } else {
                 placeholder
@@ -63,55 +63,27 @@ public struct CachedAsyncImage991<Content: View, Placeholder: View>: View {
         .task { await getImage() }
     }
     
-    private var uiImage: UIImage? {
-        if let url, let cachedImage = cache[url] {
-            cachedImage
-        } else if let uiImage = currentState?.uiImage {
-            uiImage
+    private var currentImage: UIImage? {
+        if let cached = loader.getCachedImage(for: url) {
+            cached
         } else {
-            nil
+            currentState?.uiImage
         }
     }
     
     private func getImage() async {
-        guard let url else {
-            logger.debug("Пропускаем загрузку, потому что нет ссылки")
+        guard currentImage == nil else {
             return
         }
-        guard uiImage == nil else {
-            logger.debug("Пропускаем загрузку, потому что картинка уже есть")
-            return
-        }
-        if let image = cache[url], currentState?.uiImage != image {
-            logger.debug("Используем картинку из кэша по URL: \(url, privacy: .public)")
-            currentState = .ready(image)
+        guard currentState != .loading else {
             return
         }
         currentState = .loading
-        logger.debug("Загружаем картинку по URL: \(url, privacy: .public)")
         do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            if let loadedImage = UIImage(data: data) {
-                cache[url] = loadedImage
-                currentState = .ready(loadedImage)
-                logger.debug("Успешно загрузили по URL: \(url, privacy: .public)")
-            } else {
-                logger.error("Не удалось создать картинку из Data")
-                currentState = .error
-            }
+            let image = try await loader.loadImage(for: url)
+            currentState = .ready(image)
         } catch {
-            let errorCode = (error as NSError).code
-            if errorCode == -999 {
-                logger.debug("Отменяем загрузку по URL: \(url, privacy: .public)")
-            } else {
-                logger.error(
-                    """
-                    Не удалось загрузить по URL: \(url, privacy: .public)
-                    Ошибка: \(error.localizedDescription, privacy: .public)
-                    Код: \(errorCode, privacy: .public)
-                    """
-                )
-            }
+            logger.error("\(error.localizedDescription)")
             currentState = .error
         }
     }
