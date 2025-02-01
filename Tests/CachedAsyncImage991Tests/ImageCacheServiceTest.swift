@@ -1,15 +1,39 @@
 @testable import CachedAsyncImage991
-import XCTest
+import Testing
+import UIKit
 
-final class ImageCacheServiceTest: XCTestCase {
-    private let testURL = URL(string: "testURL")!
+struct ImageCacheServiceTests {
+    @Test func sharedInstanceIsSingleton() {
+        let instance1 = ImageCacheService.shared
+        let instance2 = ImageCacheService.shared
+        #expect(instance1 === instance2)
+    }
     
-    func testSaveAndRead() {
-        let sut = ImageCacheService.shared
-        XCTAssertNil(sut[testURL])
-        let systemPersonImage = UIImage(systemName: "person")!
-        sut[testURL] = systemPersonImage
-        XCTAssertNotNil(sut[testURL])
-        XCTAssertEqual(sut[testURL], systemPersonImage)
+    @Test func storeAndRetrieveImage() throws {
+        let cache = ImageCacheService.shared
+        let url = try #require(URL(string: "https://example.com/image_\(UUID())"))
+        #expect(cache[url] == nil)
+        let image = UIImage()
+        cache[url] = image
+        #expect(cache[url] === image)
+    }
+    
+    @Test func removeImageBySettingNil() throws {
+        let cache = ImageCacheService.shared
+        let url = try #require(URL(string: "https://example.com/image_\(UUID())"))
+        let image = UIImage()
+        cache[url] = image
+        cache[url] = nil
+        #expect(cache[url] == nil)
+    }
+    
+    @Test func overwriteExistingImage() throws {
+        let cache = ImageCacheService.shared
+        let url = try #require(URL(string: "https://example.com/image_\(UUID())"))
+        let image1 = UIImage()
+        let image2 = UIImage()
+        cache[url] = image1
+        cache[url] = image2
+        #expect(cache[url] === image2)
     }
 }
