@@ -1,10 +1,19 @@
 import SwiftUI
 import CachedAsyncImage991
 
-struct Model: Identifiable, Codable {
+struct Product: Codable, Identifiable {
     let id: Int
+    let title: String
+    let images: [String]
+}
+
+struct ProductsResponse: Codable {
+    let products: [Product]
+}
+
+struct Model: Identifiable, Codable {
+    let id = UUID().uuidString
     let url: String
-    var finalURL: URL? { .init(string: url) }
 }
 
 struct ContentView: View {
@@ -14,27 +23,31 @@ struct ContentView: View {
         ScrollView {
             LazyVStack {
                 ForEach(images) { model in
-                    CachedAsyncImage991(url: model.finalURL) { image in
+                    CachedAsyncImage991(stringURL: model.url) { image in
                         Image(uiImage: image)
                             .resizable()
                             .scaledToFit()
                             .clipShape(Circle())
-                    } placeholder: {
-                        ProgressView()
                     }
                 }
                 .frame(height: 150)
             }
         }
-        .task { await getImages() }
+        .task { await fetchProductImages() }
     }
-
-    private func getImages() async {
-        guard let url = URL(string: "https://jsonplaceholder.typicode.com/photos"),
-              let (data, _) = try? await URLSession.shared.data(for: .init(url: url)),
-              let decodedArray = try? JSONDecoder().decode([Model].self, from: data)
-        else { return }
-        images = decodedArray
+    
+    func fetchProductImages() async {
+        guard let url = URL(string: "https://dummyjson.com/products") else {
+            return
+        }
+        do {
+            let (data, _) = try await URLSession.shared.data(for: .init(url: url))
+            let productsResponse = try JSONDecoder().decode(ProductsResponse.self, from: data)
+            let allImages = productsResponse.products.flatMap { $0.images }
+            self.images = allImages.map { .init(url: $0) }
+        } catch {
+            print("Ошибка: \(error.localizedDescription)")
+        }
     }
 }
 
