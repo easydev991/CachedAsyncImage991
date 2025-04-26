@@ -1,18 +1,18 @@
 import SwiftUI
 import CachedAsyncImage991
 
-struct Product: Codable, Identifiable {
+struct Product: Decodable, Identifiable {
     let id: Int
     let title: String
     let images: [String]
 }
 
-struct ProductsResponse: Codable {
+struct ProductsResponse: Decodable {
     let products: [Product]
 }
 
-struct Model: Identifiable, Codable {
-    let id = UUID().uuidString
+struct Model: Identifiable, Decodable {
+    var id = UUID().uuidString
     let url: String
 }
 
@@ -27,7 +27,6 @@ struct ContentView: View {
                         Image(uiImage: image)
                             .resizable()
                             .scaledToFit()
-                            .clipShape(Circle())
                     }
                 }
                 .frame(height: 150)

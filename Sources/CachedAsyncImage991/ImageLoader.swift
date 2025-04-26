@@ -24,7 +24,7 @@ enum ImageLoadingError: Error, LocalizedError {
     }
 }
 
-protocol ImageLoaderProtocol {
+protocol ImageLoaderProtocol: Sendable {
     func loadImage(for url: URL?) async throws -> UIImage
     func getCachedImage(for url: URL?) -> UIImage?
 }

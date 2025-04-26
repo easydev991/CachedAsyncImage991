@@ -28,7 +28,7 @@ struct ImageLoaderTests {
     }
 }
 
-private final class MockCache: ImageCacheServiceProtocol {
+private final class MockCache: ImageCacheServiceProtocol, @unchecked Sendable {
     var storage = [URL: UIImage]()
     
     subscript(key: URL) -> UIImage? {
