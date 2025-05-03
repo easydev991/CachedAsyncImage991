@@ -4,13 +4,13 @@ import UIKit
 
 struct ImageCacheServiceTests {
     @Test func sharedInstanceIsSingleton() {
-        let instance1 = ImageCacheService.shared
-        let instance2 = ImageCacheService.shared
+        let instance1 = ImageCache.shared
+        let instance2 = ImageCache.shared
         #expect(instance1 === instance2)
     }
     
     @Test func storeAndRetrieveImage() throws {
-        let cache = ImageCacheService.shared
+        let cache = ImageCache.shared
         let url = try #require(URL(string: "https://example.com/image_\(UUID())"))
         #expect(cache[url] == nil)
         let image = UIImage()
@@ -19,7 +19,7 @@ struct ImageCacheServiceTests {
     }
     
     @Test func removeImageBySettingNil() throws {
-        let cache = ImageCacheService.shared
+        let cache = ImageCache.shared
         let url = try #require(URL(string: "https://example.com/image_\(UUID())"))
         let image = UIImage()
         cache[url] = image
@@ -28,7 +28,7 @@ struct ImageCacheServiceTests {
     }
     
     @Test func overwriteExistingImage() throws {
-        let cache = ImageCacheService.shared
+        let cache = ImageCache.shared
         let url = try #require(URL(string: "https://example.com/image_\(UUID())"))
         let image1 = UIImage()
         let image2 = UIImage()
