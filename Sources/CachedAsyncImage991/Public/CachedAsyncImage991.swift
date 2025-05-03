@@ -12,17 +12,17 @@ public struct CachedAsyncImage991<Content: View, Placeholder: View>: View {
     private let placeholder: Placeholder
     private let content: (UIImage) -> Content
     private let url: URL?
-    @State private var currentState: CurrentState?
-    
+    @State private var currentState = CurrentViewState.initial
+
     /// Инициализатор с `URL`
     /// - Parameters:
     ///   - url: Ссылка на картинку в формате `URL`
-    ///   - transition: Переход из одного состояния в другое, по умолчанию `.opacity.combined(with: .scale)`
+    ///   - transition: Переход из одного состояния в другое, по умолчанию `.scale.combined(with: .opacity)`
     ///   - content: Замыкание с готовой картинкой в формате `UIImage`
     ///   - placeholder: Замыкание для настройки вьюхи на случай отсутствия картинки (загрузка/ошибка)
     public init(
         url: URL?,
-        transition: AnyTransition = .opacity.combined(with: .scale),
+        transition: AnyTransition = .scale.combined(with: .opacity),
         @ViewBuilder content: @escaping (UIImage) -> Content,
         @ViewBuilder placeholder: () -> Placeholder = { ProgressView() }
     ) {
@@ -31,23 +31,34 @@ public struct CachedAsyncImage991<Content: View, Placeholder: View>: View {
         self.content = content
         self.placeholder = placeholder()
     }
-    
+
     /// Инициализатор со строкой
     /// - Parameters:
     ///   - stringURL: Ссылка на картинку в формате `String`
-    ///   - transition: Переход из одного состояния в другое, по умолчанию `.opacity.combined(with: .scale)`
+    ///   - transition: Переход из одного состояния в другое, по умолчанию `.scale.combined(with: .opacity)`
     ///   - content: Замыкание с готовой картинкой в формате `UIImage`
     ///   - placeholder: Замыкание для настройки вьюхи на случай отсутствия картинки (загрузка/ошибка)
     public init(
         stringURL url: String?,
-        transition: AnyTransition = .opacity.combined(with: .scale),
+        transition: AnyTransition = .scale.combined(with: .opacity),
         @ViewBuilder content: @escaping (UIImage) -> Content,
         @ViewBuilder placeholder: () -> Placeholder = { ProgressView() }
     ) {
-        self.url = if let url { URL(string: url) } else { nil }
-        self.transition = transition
-        self.content = content
-        self.placeholder = placeholder()
+        let realURL: URL? = if let url { URL(string: url) } else { nil }
+        self.init(
+            url: realURL,
+            transition: transition,
+            content: content,
+            placeholder: placeholder
+        )
+    }
+
+    private var currentImage: UIImage? {
+        if let cached = loader.getCachedImage(for: url) {
+            cached
+        } else {
+            currentState.uiImage
+        }
     }
 
     public var body: some View {
@@ -62,20 +73,13 @@ public struct CachedAsyncImage991<Content: View, Placeholder: View>: View {
         .animation(.easeInOut, value: currentState)
         .task { await getImage() }
     }
-    
-    private var currentImage: UIImage? {
-        if let cached = loader.getCachedImage(for: url) {
-            cached
-        } else {
-            currentState?.uiImage
-        }
-    }
-    
+
     private func getImage() async {
-        guard currentImage == nil else {
+        if let cached = loader.getCachedImage(for: url) {
+            currentState = .ready(cached)
             return
         }
-        guard currentState != .loading else {
+        guard currentState.shouldLoad else {
             return
         }
         currentState = .loading
@@ -85,15 +89,6 @@ public struct CachedAsyncImage991<Content: View, Placeholder: View>: View {
         } catch {
             logger.error("\(error.localizedDescription)")
             currentState = .error
-        }
-    }
-    
-    enum CurrentState: Equatable {
-        case loading
-        case ready(UIImage)
-        case error
-        var uiImage: UIImage? {
-            if case let .ready(uiImage) = self { uiImage } else { nil }
         }
     }
 }
